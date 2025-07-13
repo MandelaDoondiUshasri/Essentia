@@ -11,7 +11,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-    gemini_model = genai.GenerativeModel("gemini-pro")
+    gemini_model = genai.GenerativeModel("models/gemini-pro")
 else:
     st.error("🚨 GEMINI_API_KEY not found. Please set it in Streamlit secrets.")
     st.stop()
