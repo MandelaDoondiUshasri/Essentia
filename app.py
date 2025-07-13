@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv  # ✅ Load .env file
 import streamlit as st
 import google.generativeai as genai
 from io import BytesIO
@@ -6,10 +7,12 @@ from io import BytesIO
 # ==============================
 # 🔧 Configuration
 # ==============================
-GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
+load_dotenv()  # ✅ Loads .env variables
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if not GEMINI_API_KEY:
-    st.error("🚨 GEMINI_API_KEY not found. Please set it in Streamlit secrets or environment variables.")
+    st.error("🚨 GEMINI_API_KEY not found. Please set it in a .env file or environment variables.")
     st.stop()
 
 genai.configure(api_key=GEMINI_API_KEY)
@@ -90,7 +93,6 @@ style = "bullet" if summary_style == "🔹 Bullet Points" else "paragraph"
 if "final_summary" not in st.session_state:
     st.session_state.final_summary = ""
 
-# Optional: Reset summary if input changes
 if user_input != st.session_state.get("previous_input", ""):
     st.session_state.final_summary = ""
     st.session_state.previous_input = user_input
