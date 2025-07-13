@@ -1,9 +1,7 @@
 import os
 import streamlit as st
-import requests
 import google.generativeai as genai
 from io import BytesIO
-import logging
 
 # ==============================
 # 🔧 Configuration
@@ -15,38 +13,11 @@ if not GEMINI_API_KEY:
     st.stop()
 
 genai.configure(api_key=GEMINI_API_KEY)
-
-
-# ==============================
-# 📋 Auto-Select Preferred Gemini Model
-# ==============================
-@st.cache_resource(show_spinner=False)
-def get_supported_model(preferred_models=["gemini-2.0-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro-latest"]):
-    try:
-        models = genai.list_models()
-        supported_names = [m.name for m in models if "generateContent" in m.supported_generation_methods]
-
-        # Pick first available preferred model
-        for pref in preferred_models:
-            if pref in supported_names:
-                return pref
-
-        # Fallback: any available model that supports generateContent
-        if supported_names:
-            return supported_names[0]
-
-        return None
-    except Exception as e:
-        st.error(f"⚠️ Error while listing models: {e}")
-        return None
-
-selected_model_name = get_supported_model()
-if not selected_model_name:
-    st.error("❌ No suitable Gemini model found.")
+try:
+    gemini_model = genai.GenerativeModel("gemini-2.0-flash")
+except Exception as e:
+    st.error(f"❌ Failed to load Gemini model: {e}")
     st.stop()
-
-gemini_model = genai.GenerativeModel(selected_model_name)
-st.caption(f"✅ Using Gemini model: `{selected_model_name}`")
 
 
 # ==============================
@@ -83,7 +54,7 @@ def create_pdf_file(summary_text):
     text_obj = c.beginText(40, 750)
 
     for line in summary_text.split("\n"):
-        if text_obj.getY() <= 40:  # New page when too low
+        if text_obj.getY() <= 40:
             c.showPage()
             text_obj = c.beginText(40, 750)
         text_obj.textLine(line)
