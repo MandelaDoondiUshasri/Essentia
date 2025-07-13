@@ -3,18 +3,42 @@ import streamlit as st
 import requests
 import google.generativeai as genai
 from io import BytesIO
+import logging
 
 # ==============================
 # 🔧 Configuration
 # ==============================
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
 
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    gemini_model = genai.GenerativeModel("models/gemini-pro")
-else:
-    st.error("🚨 GEMINI_API_KEY not found. Please set it in Streamlit secrets.")
+if not GEMINI_API_KEY:
+    st.error("🚨 GEMINI_API_KEY not found. Please set it in Streamlit secrets or environment variables.")
     st.stop()
+
+genai.configure(api_key=GEMINI_API_KEY)
+
+
+# ==============================
+# 📋 Auto-Select Model Supporting `generateContent`
+# ==============================
+@st.cache_resource(show_spinner=False)
+def get_supported_model():
+    try:
+        models = genai.list_models()
+        for model in models:
+            if "generateContent" in model.supported_generation_methods:
+                return model.name
+        return None
+    except Exception as e:
+        logging.warning(f"Error listing models: {e}")
+        return None
+
+selected_model_name = get_supported_model()
+if not selected_model_name:
+    st.error("❌ No available Gemini models support `generateContent`. Check your API key or permissions.")
+    st.stop()
+
+gemini_model = genai.GenerativeModel(selected_model_name)
+st.caption(f"✅ Using Gemini model: `{selected_model_name}`")
 
 
 # ==============================
@@ -49,8 +73,13 @@ def create_pdf_file(summary_text):
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
     text_obj = c.beginText(40, 750)
+
     for line in summary_text.split("\n"):
+        if text_obj.getY() <= 40:  # Start new page if near bottom
+            c.showPage()
+            text_obj = c.beginText(40, 750)
         text_obj.textLine(line)
+
     c.drawText(text_obj)
     c.showPage()
     c.save()
@@ -81,6 +110,11 @@ style = "bullet" if summary_style == "🔹 Bullet Points" else "paragraph"
 
 if "final_summary" not in st.session_state:
     st.session_state.final_summary = ""
+
+# Optional: Reset summary if input changes
+if user_input != st.session_state.get("previous_input", ""):
+    st.session_state.final_summary = ""
+    st.session_state.previous_input = user_input
 
 if st.button("✨ Summarize") or st.session_state.final_summary:
     if not user_input.strip():
