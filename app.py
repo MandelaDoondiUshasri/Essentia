@@ -1,5 +1,5 @@
 import os
-from dotenv import load_dotenv  # ✅ Load .env file
+from dotenv import load_dotenv# ✅ Load .env file
 import streamlit as st
 import google.generativeai as genai
 from io import BytesIO
@@ -72,10 +72,10 @@ def create_pdf_file(summary_text):
 # ==============================
 # 🌟 Streamlit App UI
 # ==============================
-st.set_page_config(page_title="InstaGist", page_icon="📝", layout="centered")
+st.set_page_config(page_title="Essentia", page_icon="📝", layout="centered")
 
-st.title("📝 InstaGist")
-st.subheader("From essay to essence in a click.")
+st.title("📝 Essentia")
+st.subheader("From clutter to clarity in seconds.")
 
 user_input = st.text_area(
     "Enter text to summarize:",
